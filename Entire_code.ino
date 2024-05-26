@@ -1,7 +1,5 @@
 #include <EEPROM.h>
 
-//set a place in memory to store : last_adress_of_addr and last_adress_of_vals so to continu from where you stoped
-
 bool print_to_Serial = true;
 bool print_to_Serial_advanced = true;
 
