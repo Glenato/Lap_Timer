@@ -7,6 +7,19 @@ bool print_to_Serial_advanced = true;
 const int trigPin = 9;
 const int echoPin = 10;
 
+//this function is up here becaus it is used to update the last_adress_of_addr and last_adress_of_vals variables
+unsigned int read_unsigned_int_from_EEPROM(unsigned int addr){
+  unsigned int result = (EEPROM.read(addr)<<8) + EEPROM.read(addr+1);
+
+  if (print_to_Serial_advanced == true){
+    Serial.print ("The int at adress ");
+    Serial.print (addr);
+    Serial.print (" is ");
+    Serial.println (result);
+  }
+  return result;
+}
+
 //stores the last adress of addr and of vals
 unsigned long last_adress_of_addr = read_unsigned_int_from_EEPROM(3842);
 unsigned long last_adress_of_vals = read_unsigned_int_from_EEPROM(3845);
@@ -134,18 +147,6 @@ void write_unsigned_int_to_EEPROM(unsigned int addr, unsigned int val){
   }
 }
 
-unsigned int read_unsigned_int_from_EEPROM(unsigned int addr){
-  unsigned int result = (EEPROM.read(addr)<<8) + EEPROM.read(addr+1);
-
-  if (print_to_Serial_advanced == true){
-    Serial.print ("The int at adress ");
-    Serial.print (addr);
-    Serial.print (" is ");
-    Serial.println (result);
-  }
-  return result;
-}
-
 
 void erase_all_memory(){
   if (print_to_Serial==true){
@@ -161,8 +162,8 @@ void erase_all_memory(){
   }
   last_adress_of_addr = 0;
   last_adress_of_vals = 0;
-  last_adress_of_addr = write_unsigned_int_from_EEPROM(3842);
-  last_adress_of_vals = write_unsigned_int_from_EEPROM(3845);
+  write_unsigned_int_to_EEPROM(3842, 0);
+  write_unsigned_int_to_EEPROM(3845, 0);
 }
 
 
@@ -448,7 +449,7 @@ void setup() {
   if (print_to_Serial_advanced == true){
     check_memory_left();
     //delay to be able to see if there are any values that may overflow
-    delay (4000)
+    delay (4000);
   }
 
 
