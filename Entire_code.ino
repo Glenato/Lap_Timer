@@ -1,11 +1,17 @@
 #include <EEPROM.h>
 
 bool print_to_Serial = true;
-bool print_to_Serial_advanced = true;
+bool print_to_Serial_advanced = false;
+
+//give a delay were the sensors data will not be read to not read multiple times the same object (values are in miliseconds and add 82 miliseconds corresponding to the average runtime)
+int delay_beetween_laps = 1000;
 
 //set trig and echo pin for ultrasonic sensor
 const int trigPin = 9;
 const int echoPin = 10;
+
+//This is the threshold at witch the sensore will activate
+int distance_precision = 200;
 
 //this function is up here becaus it is used to update the last_adress_of_addr and last_adress_of_vals variables
 unsigned int read_unsigned_int_from_EEPROM(unsigned int addr){
@@ -31,14 +37,19 @@ void blink_led_forever(){
     Serial.println("Led is blinking forever");
   }
   while (true){
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(250);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(250);
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(250);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(250);
   }
 }
 
 void got_error(byte error_number){
+
+  if (print_to_Serial==true){
+    Serial.print("Error : ");
+    Serial.println(error_number);
+  }
   int addr = 4000;
   while (EEPROM.read(addr) != 255 && addr <= 4092){
     addr += 1;
@@ -147,7 +158,6 @@ void write_unsigned_int_to_EEPROM(unsigned int addr, unsigned int val){
   }
 }
 
-
 void erase_all_memory(){
   if (print_to_Serial==true){
     Serial.println("Erasing memory...");
@@ -161,9 +171,9 @@ void erase_all_memory(){
     Serial.println("All 4096 bytes of EEPROM have been erased.");
   }
   last_adress_of_addr = 0;
-  last_adress_of_vals = 0;
+  last_adress_of_vals = 1281;
   write_unsigned_int_to_EEPROM(3842, 0);
-  write_unsigned_int_to_EEPROM(3845, 0);
+  write_unsigned_int_to_EEPROM(3845, 1281);
 }
 
 
@@ -180,7 +190,6 @@ void print_out_memory(){
     }
   }
 }
-
 
 bool check_check_if_memory_is_none(){
   bool result = true;
@@ -257,7 +266,7 @@ void convert_interval_to_time(unsigned long interval){
 }
 
 void check_memory_left(){
-  if (!print_to_Serial || !print_to_Serial_advanced){
+  if (print_to_Serial == false){
     return;
   }
   int i = 0;
@@ -313,9 +322,10 @@ void check_memory_left(){
 }
 
 void print_leaderboard(){
-  if (print_to_Serial!=true){
+  if (print_to_Serial==false){
     return;
   }
+  Serial.println("Leader Board :");
   unsigned int currentAddr = 1281;
   unsigned long storedAddr = read_unsigned_long_from_EEPROM(currentAddr);
   int i = 0;
@@ -334,36 +344,41 @@ void print_leaderboard(){
   for (int x = 0; x<i; x++) {
       arr[x] = read_unsigned_long_from_EEPROM(currentAddr); 
       currentAddr += 4;
+
+  if (i == 0) {
+    Serial.println("No data found.");
+    return;
+  }
   }
   for (int z = 0; z < i; z++) {
-      unsigned long smallest_value = 4294967290;
-      int smallest_index = -1;
-      for (int w = 0; w < i; w++) {
-          if (arr[w] < smallest_value) {
-              smallest_value = arr[w];
-              smallest_index = w;
-          }
-      }
-      if (smallest_index != -1) {
-        if (z<10){
-          Serial.print(0);
+    unsigned long smallest_value = 4294967290;
+    int smallest_index = -1;
+    for (int w = 0; w < i; w++) {
+        if (arr[w] < smallest_value) {
+            smallest_value = arr[w];
+            smallest_index = w;
         }
-        if (z<100){
-          Serial.print(0);
-        }
-        Serial.print(z);
-        Serial.print(" st : ");
-        convert_interval_to_time(smallest_value);
-        arr[smallest_index] = 4294967295; 
+    }
+    if (smallest_index != -1) {
+      if (z<10){
+        Serial.print(0);
       }
+      if (z<100){
+        Serial.print(0);
+      }
+      Serial.print(z);
+      Serial.print(" st : ");
+      convert_interval_to_time(smallest_value);
+      arr[smallest_index] = 4294967295; 
     }
   }
+}
 
 //This program is meant to run for laps that are under 71 min
 unsigned long calculate_and_save_interval (unsigned long before_in_micro, unsigned long current_micro){
   unsigned long interval_micro = current_micro - before_in_micro;
 
-  if (print_to_Serial==true){
+  if (print_to_Serial_advanced==true){
     Serial.print("interval ");
     Serial.println(interval_micro);
   }
@@ -398,7 +413,7 @@ unsigned long calculate_and_save_interval (unsigned long before_in_micro, unsign
 
 void check_sensor(){
   float duration, distance;
-  for (int i = 0;i <10; i++){
+  for (int i = 0;i < 100; i++){
     digitalWrite(trigPin, LOW);
     delayMicroseconds(2);
     digitalWrite(trigPin, HIGH);
@@ -406,10 +421,14 @@ void check_sensor(){
     digitalWrite(trigPin, LOW);
     duration = pulseIn(echoPin, HIGH);
     distance = (duration*.0343)/2;
-    
-    if (distance > 500){
+    if (print_to_Serial==true){
+      Serial.print("Distance : ");
+      Serial.println(distance);
+    }
+    if (distance < distance_precision){
       return;
     } 
+    delay (500);
   }
   if (print_to_Serial==true){
     Serial.println("Sensor probleme");
@@ -419,9 +438,9 @@ void check_sensor(){
 }
 
 void ultrasonic_sensor_loop(){
-  float duration, distance = 1200;
+  float duration, distance = 12000;
 
-  while (distance > 500){
+  while (distance > distance_precision){
     digitalWrite(trigPin, LOW);
     delayMicroseconds(2);
     digitalWrite(trigPin, HIGH);
@@ -445,13 +464,27 @@ void setup() {
   if (print_to_Serial==true || print_to_Serial_advanced == true){
     Serial.begin(9600);
   }
+
+
+
+
+  if (print_to_Serial == true){
+    print_leaderboard();
+  }
+
+
+
+
+
+
+
+
   
   if (print_to_Serial_advanced == true){
     check_memory_left();
     //delay to be able to see if there are any values that may overflow
     delay (4000);
   }
-
 
   if (print_to_Serial==true){
     Serial.println("Checking sensor...");
@@ -490,6 +523,15 @@ void setup() {
 }
 
 void loop() {
+  if (delay_beetween_laps >0){
+    delay (delay_beetween_laps);
+  }
+
+  if (print_to_Serial == true){
+    Serial.println();
+    Serial.println("New lap");
+    Serial.println();
+  }
   ultrasonic_sensor_loop();
 
   //sets current_micro to the current time to not remove the running time of the programme from the lap
@@ -509,5 +551,6 @@ void loop() {
   //before_in_micro = current_micro;
   before_in_micro = micros();
 }
+
 
 //The End
