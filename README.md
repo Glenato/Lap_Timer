@@ -48,4 +48,4 @@ The 4092 byte is only used to know if the errors memory is full, if there is the
 3 : Values (last_adress_of_vals) overflow 
 
 ### Errors that do not require a human intervention are values from 200 to 254 :
-(Their are none yet)
+(The are none yet)
