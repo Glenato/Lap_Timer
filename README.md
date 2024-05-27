@@ -1,5 +1,8 @@
 # Lap_Timer
 Arduino-based project designed to log distance intervals measured by an ultrasonic sensor into the EEPROM. This values can are stored and than can be viewed by plugging the Arduino into your computer.
+# Schematics
+
+<img width="800" alt="Schematics" src="https://github.com/Glenato/Lap_Timer/assets/124728975/e268e161-8bc2-4910-9156-191676ca5cd4">
 
 # Memory usage
 Memory (16 cubes (4096 / 256)): 
