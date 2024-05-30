@@ -11,7 +11,7 @@ const int trigPin = 9;
 const int echoPin = 10;
 
 //This is the threshold at witch the sensore will activate
-int distance_precision = 200;
+int distance_precision = 700;
 
 //this function is up here becaus it is used to update the last_adress_of_addr and last_adress_of_vals variables
 unsigned int read_unsigned_int_from_EEPROM(unsigned int addr){
